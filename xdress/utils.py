@@ -216,7 +216,7 @@ def touch(filename):
 def isvardesc(desc):
     """Tests if a description is a variable-type description."""
     return desc is not None and 'type' in desc and 'signatures' not in desc and \
-           'methods' not in desc
+           'methods' not in desc and not isinstance(desc, str)
 
 def isfuncdesc(desc):
     """Tests if a description is a function-type description."""

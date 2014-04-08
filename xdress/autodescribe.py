@@ -1868,6 +1868,10 @@ class PycparserBaseDescriber(PycparserNodeVisitor):
     def visit_ArrayDecl(self, node):
         self._pprint(node)
         self.visit(node.type)
+        if isinstance(node.dim, pycparser.c_ast.BinaryOp):
+            node.dim = self.simplify_BinaryOp(node.dim)
+        elif isinstance(node.dim, pycparser.c_ast.ID):
+            node.dim = self.convert_EnumToConstant(node.dim)
         predicate = '*' if node.dim is None else int(node.dim.value)
         self._currtype = (self._currtype, predicate)
 
@@ -1937,6 +1941,30 @@ class PycparserBaseDescriber(PycparserNodeVisitor):
                 print(msg.format(self.name, name))
                 continue
             self.desc['attrs'][name] = t
+
+    def simplify_BinaryOp(self, binaryOp):
+        leftValue = self.calc_BinaryOpOrConstant(binaryOp.left)
+        rightValue = self.calc_BinaryOpOrConstant(binaryOp.right)
+        return pycparser.c_ast.Constant(
+            value=str(eval(str(leftValue.value) + str(binaryOp.op) + str(rightValue.value))),
+            type='int')
+
+    def calc_BinaryOpOrConstant(self, binaryOpOrConstant):
+        if isinstance(binaryOpOrConstant, pycparser.c_ast.Constant):
+            return binaryOpOrConstant
+        if isinstance(binaryOpOrConstant, pycparser.c_ast.BinaryOp):
+            return self.simplify_BinaryOp(binaryOpOrConstant)
+        if isinstance(binaryOpOrConstant, pycparser.c_ast.ID):
+            return self.convert_EnumToConstant(binaryOpOrConstant)
+        raise TypeError('Can\'t simplify binary operator to constant')
+
+    def convert_EnumToConstant(self, elemId):
+        for typename in self._basetypes:
+            typedesc = self._basetypes[typename]
+            if typedesc[0] == 'enum':
+                for elem in typedesc[2]:
+                    if elemId.name == elem[0]:
+                        return pycparser.c_ast.Constant(value=elem[1], type='int')
 
 class PycparserVarDescriber(PycparserBaseDescriber):
 

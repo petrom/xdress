@@ -15,6 +15,9 @@ typedef enum PersonID {
   HOOVER,
   MULAN=42,
   LESLIE,
+  MARK,
+  MARKUS=MARK,
+  JACK,
 } PersonID;
 
 // structs

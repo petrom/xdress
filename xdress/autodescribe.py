@@ -1832,6 +1832,11 @@ class PycparserBaseDescriber(PycparserNodeVisitor):
         if node.value is None:
             if len(self._currenum) == 0:
                 value = 0
+            elif isinstance(self._currenum[-1][-1], pycparser.c_ast.ID):
+                for elem in self._currenum:
+                    if elem[0] == self._currenum[-1][-1].name:
+                        value = elem[1]
+                        break
             else:
                 value = self._currenum[-1][-1] + 1
         elif isinstance(node.value, pycparser.c_ast.Constant):

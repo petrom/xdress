@@ -32,3 +32,17 @@ int func4(int id) {
 double call_threenums_op_from_c(ThreeNums x) {
   return x.op(x.a, x.b, x.c);
 }
+
+static event_cb_t g_evt;
+static void* g_context;
+
+void subscribe_for_event(event_cb_t event_cb, void* context)
+{
+	g_evt = event_cb;
+	g_context = context;
+}
+
+void pulse_event()
+{
+	g_evt(2, g_context);
+}

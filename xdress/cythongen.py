@@ -294,6 +294,9 @@ def funccpppxd(desc, exceptions=True, ts=None):
         if any([a[1] is None or a[1][0] is None for a in fargs + (frtn,)]):
             continue
         argfill = ", ".join([ts.cython_ctype(a[1]) for a in fargs])
+        # remove '{type_name}' place holder when function pointer is not a member of struct
+        if '*{type_name}' in argfill:
+            argfill = argfill.replace('*{type_name}', '*')
         for a in fargs:
             ts.cython_cimport_tuples(a[1], cimport_tups, inc)
         estr = _exception_str(exceptions, desc['name']['language'], frtn, ts)
@@ -996,6 +999,16 @@ def _gen_function_pointer_wrapper(name, t, ts, classname='', max_callbacks=8):
     lines += ['', ""]
     return lines
 
+def _gen_function_pointer_wrapper_no_method(name, t, ts, funcname):
+    lines = ["#\n# Function pointer helper for {0}\n#".format(name, funcname), ""]
+    pyname, cname = _mangle_function_pointer_name(name, funcname)
+    decl, body, rtn = ts.cython_py2c(pyname, t, proxy_name=cname)
+    lines += [pyname + " = None", ""]
+    lines += rtn.splitlines()
+    lines.append("")
+    lines += ["", ""]
+    return lines
+
 def _gen_argfill(args, defaults):
     """Generate argument list for a function, and return (argfill, names).
     If any argument names or empty, the corresponding entry in names will
@@ -1040,6 +1053,10 @@ def _gen_function(name, name_mangled, args, rtn, defaults, ts, doc=None,
     argrtns = {}
     for n,a in zip(names, args):
         adecl, abody, artn = ts.cython_py2c(n, a[1])
+        if ts.isfunctionpointer(a[1]):
+            abody = ['global _xdress_{0}_{1}_proxy'.format(name, n),]
+            abody.append('_xdress_{0}_{1}_proxy = {1}'.format(name, n))
+            artn = '_xdress_{0}_{1}_proxy_func'.format(name, n)
         if adecl is not None:
             decls += indent(adecl, join=False)
         if abody is not None:
@@ -1524,7 +1541,7 @@ def funcpyx(desc, ts=None):
     # For renaming
     ftopname = desc['name']['tarname']
     fcytopname = ts.cython_funcname(ftopname)
-
+    mc = 8#desc.get('extra', {}).get('max_callbacks', max_callbacks)
     flines = []
     funccounts = _count0(desc['signatures'])
     currcounts = dict([(k, 0) for k in funccounts])
@@ -1548,11 +1565,19 @@ def funcpyx(desc, ts=None):
             fname_mangled = fcytopname
         currcounts[fname] += 1
         mangled_fnames[fkey] = fname_mangled
+        # For function pointers
+        alines = []
+        fplines = []
         for a in fargs:
+            if not isinstance(a, basestring) and ts.isfunctionpointer(a[1]):
+                adoc = '""" adoc: function pointer """'
+                fplines += _gen_function_pointer_wrapper_no_method(a[0], a[1], ts, fname)
             ts.cython_import_tuples(a[1], import_tups)
             ts.cython_cimport_tuples(a[1], cimport_tups)
         ts.cython_import_tuples(frtn, import_tups)
         ts.cython_cimport_tuples(frtn, cimport_tups)
+        if len(fplines) > 0:
+            flines += fplines
         fdoc = desc.get('docstring', nodocmsg.format(fcyname))
         fdoc = _doc_add_sig(fdoc, fcyname, fargs, fdefs, ismethod=False)
         flines += _gen_function(fcyname, fname_mangled, fargs, frtn, fdefs, ts,

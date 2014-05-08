@@ -2191,6 +2191,9 @@ class TypeSystem(object):
                 nested = True
                 vdecl, vbody, vrtn = self.cython_py2c(var, vartype)
                 template_kw['var'] = vrtn
+        # filter out '{type_name}' from function pointer with function pointer argument
+        if '*{type_name' in body_template and not 'type_name' in template_kw.keys():
+            template_kw['type_name'] = ''
         body_filled = body_template.format(**template_kw)
         if rtn_template:
             if '{t.cython_ctype}'in body_template:

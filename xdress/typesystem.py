@@ -1439,6 +1439,8 @@ class TypeSystem(object):
             if not isinstance(t0, basestring) and not isinstance(t0, Sequence):
                 _raise_type_error(t)
             if self.isdependent(t0):
+                if last_val == '*':
+		    return (self.canon(t0), last_val)
                 return self._resolve_dependent_type(t0, t)
             elif t0 in self.template_types:
                 templen = len(self.template_types[t0])

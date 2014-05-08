@@ -1872,7 +1872,7 @@ class PycparserBaseDescriber(PycparserNodeVisitor):
             node.dim = self.simplify_BinaryOp(node.dim)
         elif isinstance(node.dim, pycparser.c_ast.ID):
             node.dim = self.convert_EnumToConstant(node.dim)
-        predicate = '*' if node.dim is None else int(node.dim.value)
+        predicate = '*' #if node.dim is None else int(node.dim.value)
         self._currtype = (self._currtype, predicate)
 
     def visit_FuncDecl(self, node):

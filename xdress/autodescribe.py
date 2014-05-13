@@ -1879,6 +1879,11 @@ class PycparserBaseDescriber(PycparserNodeVisitor):
         self._pprint(node)
         args = []
         params = () if node.args is None else node.args.params
+        if len(params) == 1 \
+            and isinstance(params[0], pycparser.c_ast.Typename) \
+            and isinstance(params[0].type, pycparser.c_ast.TypeDecl) \
+            and params[0].type.declname is None:
+            params = ()
         for i, arg in enumerate(params):
             if isinstance(arg, pycparser.c_ast.EllipsisParam):
                 continue

@@ -57,4 +57,16 @@ typedef union SharedSpace
     float f_val;
 } SharedSpace;
 
+typedef enum EventType {
+	EVT_ONE=42,
+	EVT_TWO,
+} EventType;
+
+// callbacks
+typedef int (*event_cb_t) (int event, void* context);
+
+void subscribe_for_event(event_cb_t event_cb, void* context);
+
+void pulse_event();
+
 #endif

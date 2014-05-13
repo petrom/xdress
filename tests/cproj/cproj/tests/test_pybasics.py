@@ -76,3 +76,8 @@ def test_three_nums():
     v = pybasics.call_threenums_op_from_c(x)
     assert_equal(30.0, v)
     print("result of call_threenums_op_from_c(x) = ", v)
+
+def test_event():
+    pybasics.subscribe_for_event(lambda e, c: print('event #', e, 'context ', c), test_event)
+    pybasics.pulse_event()
+

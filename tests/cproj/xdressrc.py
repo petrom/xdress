@@ -20,6 +20,7 @@ _indiscovery = {'srcfiles': _fromsrcdir('discovery*'),
 
 variables = [
     apiname('PersonID', tarbase='pybasics', **_inbasics),
+    apiname('EventType', tarbase='pybasics', **_inbasics),
     apiname('*', **_indiscovery),
     ]
 
@@ -36,6 +37,8 @@ functions = [
     apiname('func4', tarbase='pybasics', **_inbasics),
     apiname('call_threenums_op_from_c', tarbase='pybasics', **_inbasics),
     apiname('*', **_indiscovery),
+    apiname('subscribe_for_event', tarbase='pybasics', **_inbasics),
+    apiname('pulse_event', tarbase='pybasics', **_inbasics),
     ]
 
 classes = [

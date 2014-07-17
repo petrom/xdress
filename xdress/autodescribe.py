@@ -1843,7 +1843,7 @@ class PycparserBaseDescriber(PycparserNodeVisitor):
             value = self._enumint(node.value.value)
         elif isinstance(node.value, pycparser.c_ast.UnaryOp):
             if not isinstance(node.value.expr, pycparser.c_ast.Constant):
-                raise ValueError("non-contant enum values not yet supported")
+                raise ValueError("non-constant enum values not yet supported")
             value = self._enumint(node.value.op + node.value.expr.value)
         else:
             value = node.value
@@ -2008,8 +2008,9 @@ class PycparserVarDescriber(PycparserBaseDescriber):
         if node is None:
             self.load_basetypes()
             for child_name, child in self._root.children():
-                if (getattr(child, 'name', None) == self.name) or \
-                     (isinstance(child, pycparser.c_ast.Typedef) and child.name[:-1] == self.name[:-1]):
+                if getattr(child, 'name', None) == self.name or \
+                  (isinstance(child, pycparser.c_ast.Typedef) and child.name is not None):# and \
+                  #(child.name[:-1] == self.name[:-1] or child.name[1:-1] == self.name[:-1])):
                     if isinstance(child, pycparser.c_ast.FuncDef):
                         raise TypeError(self._type_error_msg.format(
                             self.name, 'function', 'PycparserFuncDescriber'))

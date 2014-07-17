@@ -322,8 +322,9 @@ class PycparserFinder(astparsers.PycparserNodeVisitor):
         if node.coord.file not in self.onlyin:
             return
         name = node.name
-        if name.startswith('_'):
-            return
+        # TODO: add appropriate param to enable/disable it
+        #if name.startswith('_'):
+        #    return
         if name in FORBIDDEN_NAMES:
             return
         self._pprint(node)
@@ -336,8 +337,11 @@ class PycparserFinder(astparsers.PycparserNodeVisitor):
             name = node.type.type.declname
         else:
             name = node.type.declname
-        if name is None or name.startswith('_'):
+        if name is None:
             return
+        # TODO: add appropriate param to enable/dissble it
+	#if name.startswith('_'):
+        #    return
         if name in FORBIDDEN_NAMES:
             return
         self._pprint(node)
@@ -350,8 +354,9 @@ class PycparserFinder(astparsers.PycparserNodeVisitor):
         if name is None:
             self._status = "<name-not-found>"
             return
-        if name.startswith('_'):
-            return 
+        # TODO: add appropriate param to enable/disable it
+        #if name.startswith('_'):
+        #    return 
         if name in FORBIDDEN_NAMES:
             return
         self._pprint(node)
@@ -369,8 +374,9 @@ class PycparserFinder(astparsers.PycparserNodeVisitor):
             return
         if stat == "<name-not-found>":
             name = node.name
-        if name is None or name.startswith('_'):
-            return
+        # TODO: add approptiate param to enable/disable it
+	#if name is None or name.startswith('_'):
+        #    return
         if name in FORBIDDEN_NAMES:
             return
         self.classes.append(name)

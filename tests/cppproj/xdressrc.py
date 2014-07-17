@@ -19,6 +19,11 @@ dtypes = [
     ]
 
 stlcontainers = [
+    ('pair', 'int', ('vector', 'int')),
+    ('pair', 'int', 'str'),
+    ('pair', 'int', 'int'),
+    ('pair', 'int', 'SomeCrazyPairValue'),
+    ('pair', 'ThreeNums', 'int'),
     ('vector', 'float64'),
     ('vector', 'str'),
     ('vector', 'int32'),
@@ -43,6 +48,7 @@ stlcontainers = [
     ('map', 'int', 'float'),
     ('map', 'uint', 'float'),
     ('map', 'int', 'complex'),
+    ('map', ('pair', 'int', 'int'), 'float'),
     ('map', 'int', ('set', 'int')),
     ('map', 'int', ('set', 'str')),
     ('map', 'int', ('set', 'uint')),
@@ -83,6 +89,7 @@ variables = [
 
 functions = [
     apiname('voided', **_inbasics),
+    apiname('pairs_be_crazy', tarbase='pybasics', **_inbasics),
     apiname('call_with_void_fp_struct', **_inbasics), 
     {'srcname': 'func0', 
      'tarname': 'a_better_name',
@@ -115,6 +122,8 @@ classes = [
     apiname('A', **_inbasics),
     apiname('B', **_inbasics),
     apiname('C', **_inbasics),
+    apiname('SomeCrazyPairValue', tarbase='pybasics', **_inbasics),
+    # apiname('SomeCrazyPairValue', **_inbasics),
     apiname(('TClass1', 'int32'), **_inbasics), 
     apiname(('TClass1', 'float64'), **_inbasics), 
     {'srcname': ('TClass1', 'float32'), 

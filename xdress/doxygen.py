@@ -88,11 +88,11 @@ import re
 import os
 import subprocess
 import sys
-from collections import OrderedDict
 from textwrap import TextWrapper
+
 from .plugins import Plugin
+from .types.matching import TypeMatcher, MatchAny
 from .utils import newoverwrite, parse_template
-from .typesystem import TypeMatcher, MatchAny
 
 # XML conditional imports
 try:
@@ -176,8 +176,8 @@ def class_docstr(class_dict, desc_funcs=False):
 
     """
     class_name = class_dict['kls_name'].split('::')[-1]
-    cls_msg = class_dict['public-func'][class_name]['detaileddescription']
-
+    cls_msg = class_dict.get('public-func', {}).get(class_name, {})\
+                        .get('detaileddescription', '')
     msg = wrap_68.fill(cls_msg)
 
     # Get a list of the methods and variables to list here.
@@ -223,7 +223,8 @@ def class_docstr(class_dict, desc_funcs=False):
     methods.sort()
 
     # Move the destructor from the bottom to be second.
-    methods.insert(1, methods.pop())
+    if len(methods) > 0:
+        methods.insert(1, methods.pop())
 
     for i in methods:
         desc = funcs[i]['briefdescription']
@@ -985,31 +986,22 @@ class XDressPlugin(Plugin):
         doxygen
         """
         rc_params = {'PROJECT_NAME': rc.package,
-                     'OUTPUT_DIRECTORY': rc.builddir,
-                     'INPUT': rc.sourcedir}
+                     'OUTPUT_DIRECTORY': rc.builddir,}
         rc.doxygen_config.update(rc_params)
 
-    def execute(self, rc):
-        """Runs doxygen to produce the xml, then parses it and adds
-        docstrings to the desc dictionary.
-        """
-        print("doxygen: Running dOxygen")
-        fail_msg = "doxygen: Couldn't find {tt} {name} in xml. Skipping it"
-        fail_msg += " - it will not appear in wrapper docstrings."
-
-        build_dir = rc.builddir
-
+    def _run_dox(self, rc, inputs):
+        """Runs dOxygen for a set of input files."""
         # Create the doxyfile
+        rc.doxygen_config['INPUT'] = " ".join(inputs)
         doxyfile = dox_dict2str(rc.doxygen_config)
         newoverwrite(doxyfile, rc.doxyfile_name)
 
         # Run doxygen
         subprocess.call(['doxygen', rc.doxyfile_name])
 
-        xml_dir = build_dir + os.path.sep + 'xml'
-        # Parse index.xml and obtain list of classes and functions
-        print("doxygen: Adding dOxygen to docstrings")
-        classes, funcs = parse_index_xml(xml_dir + os.path.sep + 'index.xml')
+    def _process_dox(self, rc, xml_dir):
+        """Process the dOxygen files."""
+        classes, funcs = parse_index_xml(os.path.join(xml_dir, 'index.xml'))
         tm_classes = {}
         for i in classes.keys():
             parsed_class = parse_template(i)
@@ -1033,11 +1025,25 @@ class XDressPlugin(Plugin):
                         p_list.append(item)
 
                 tm_classes[i] = TypeMatcher(tuple(p_list))
+        return funcs, classes, tm_classes
+
+    def execute(self, rc):
+        """Runs doxygen to produce the xml, then parses it and adds
+        docstrings to the desc dictionary.
+        """
+        print("doxygen: Running dOxygen")
+        fail_msg = "doxygen: Couldn't find {tt} {name} in xml. Skipping it"
+        fail_msg += " - it will not appear in wrapper docstrings."
+
+        build_dir = rc.builddir
+        xml_dir = os.path.join(build_dir, 'xml')
 
         # Go for the classes!
         for c in rc.classes:
+            self._run_dox(rc, c.srcfiles)
+            funcs, classes, tm_classes = self._process_dox(rc, xml_dir)
             kls = c.srcname
-            kls_mod = c.tarfile
+            kls_mod = c.tarbase
 
             # Parse the class
             if kls in classes:
@@ -1105,7 +1111,7 @@ class XDressPlugin(Plugin):
         # And on to the functions.
         for f in rc.functions:
             func = f.srcname
-            func_mod = f.tarfile
+            func_mod = f.tarbase
 
             if not isinstance(func, basestring):
                 # It must be a tuple because it is a template function

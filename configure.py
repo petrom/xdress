@@ -21,6 +21,11 @@ if sys.version_info[0] >= 3:
         return old_spawn_posix(list(map(decode, cmd)), search_path, verbose, dry_run)
     distutils.spawn._spawn_posix = hack_spawn_posix
 
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    DEVNULL = open(os.devnull,'wb')
+
 INFO = {
     'version': xdress.version.xdress_version,
 }
@@ -87,9 +92,9 @@ def setup():
         scripts = [os.path.join(scripts_dir, f)
                    for f in os.listdir(scripts_dir)
                    if not f.endswith('.bat')]
-    packages = ['xdress', 'xdress.clang', 'xdress._enum']
+    packages = ['xdress', 'xdress.clang', 'xdress._enum', 'xdress.types']
     pack_dir = {'xdress': 'xdress', 'xdress.clang': 'xdress/clang', 
-                'xdress._enum': 'xdress/_enum'}
+                'xdress._enum': 'xdress/_enum', 'xdress.types': 'xdress/types'}
     pack_data = {'xdress': ['*.pxd', '*.pyx', '*.h', '*.cpp'], 
                  'xdress._enum': ['LICENSE', 'README']}
 
@@ -114,20 +119,29 @@ def setup():
                 print('Disabling clang since llvm-config not found: tried %s'%', '.join(options))
                 print('To override, set the LLVM_CONFIG environment variable.')
                 llvm_config = None
+    version = 0,
     if llvm_config is not None:
         try:
             llvm_cppflags = (   os.environ.get('LLVM_CPPFLAGS')
                              or subprocess.check_output([llvm_config,'--cppflags'])).split()
-            llvm_ldflags  = (   os.environ.get('LLVM_LDFLAGS')
-                             or subprocess.check_output([llvm_config,'--ldflags','--libs'])).split()
+            try:
+                llvm_ldflags = os.environ['LLVM_LDFLAGS'].split()
+            except KeyError:
+                llvm_ldflags = subprocess.check_output([llvm_config,'--ldflags','--libs']).split()
+                try:
+                    llvm_ldflags.extend(subprocess.check_output([llvm_config,'--system-libs'],stderr=DEVNULL).split())
+                except subprocess.CalledProcessError:
+                    pass
+            version = subprocess.check_output([llvm_config,'--version'])
         except OSError as e:
             raise OSError("Failed to run llvm-config program '%s': %s" % (llvm_config, e))
+        version = tuple(int(part) for part in version.strip().split('.'))
         clang_dir = os.path.join(dir_name, 'xdress', 'clang')
         clang_src_dir = os.path.join(clang_dir, 'src')
         clang_libs = (   os.environ.get('CLANG_LIBS')
                       or '''clangTooling clangFrontend clangDriver clangSerialization clangCodeGen
-                            clangParse clangSema clangStaticAnalyzerFrontend clangStaticAnalyzerCheckers
-                            clangStaticAnalyzerCore clangAnalysis clangARCMigrate clangEdit
+                            clangParse clangSema clangStaticAnalyzerFrontend clangARCMigrate
+                            clangStaticAnalyzerCheckers clangStaticAnalyzerCore clangAnalysis clangEdit
                             clangRewriteCore clangAST clangLex clangBasic''').split()
         # If the user sets CFLAGS, make sure we still have our own include path first
         if 'CFLAGS' in os.environ:
@@ -140,7 +154,7 @@ def setup():
                              sources=glob.glob(os.path.join(clang_src_dir, '*.cpp')),
                              define_macros=[('XDRESS', 1)],
                              include_dirs=[clang_dir],
-                             extra_compile_args=llvm_cppflags+['-fno-rtti'],
+                             extra_compile_args=llvm_cppflags+['-fno-rtti']+['-std=c++11']*(version>(3,4)),
                              extra_link_args=llvm_ldflags,
                              libraries=clang_libs,
                              language='c++')]
@@ -179,7 +193,7 @@ def setup():
             "Topic :: Software Development :: Compilers",
             "Topic :: Utilities",
         ],
-        "data_files": [("", ['license', 'configure.py']),],
+        #"data_files": [("", ['license', 'configure.py']),],
     }
     # changing dirs for virtualenv
     cwd = os.getcwd()

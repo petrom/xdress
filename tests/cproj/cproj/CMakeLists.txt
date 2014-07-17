@@ -18,3 +18,7 @@ target_link_libraries(pybasics cproj_basics)
 # discovery
 cython_add_module(discovery discovery.pyx)
 target_link_libraries(discovery cproj_discovery)
+
+# cproj_types
+cython_add_module(cproj_types cproj_types.pyx)
+target_link_libraries(cproj_types cproj_cproj_types)

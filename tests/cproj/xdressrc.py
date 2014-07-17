@@ -5,8 +5,7 @@ package = 'cproj'
 packagedir = 'cproj'
 includes = ['src']
 
-plugins = ('xdress.autoall', 'xdress.pep8names', 'xdress.cythongen', 
-           'xdress.extratypes')
+plugins = ('xdress.autoall', 'xdress.cythongen', 'xdress.extratypes')
 
 extra_types = 'cproj_extra_types'  # non-default value
 
@@ -17,10 +16,15 @@ _inbasics = {'srcfiles': _fromsrcdir('basics*'),
 _indiscovery = {'srcfiles': _fromsrcdir('discovery*'),
                 'incfiles': 'discovery.h',
                 }
+_incprojtypes = {'srcfiles': _fromsrcdir('cproj_types*'),
+                 'incfiles': 'cproj_types.h',
+                 'language': 'c',
+                }
 
 variables = [
     apiname('PersonID', tarbase='pybasics', **_inbasics),
     apiname('*', **_indiscovery),
+    apiname('*', tarbase='cproj_types', **_incprojtypes),
     ]
 
 functions = [
@@ -36,6 +40,7 @@ functions = [
     apiname('func4', tarbase='pybasics', **_inbasics),
     apiname('call_threenums_op_from_c', tarbase='pybasics', **_inbasics),
     apiname('*', **_indiscovery),
+    apiname('*', tarbase='cproj_types', **_incprojtypes),
     ]
 
 classes = [
@@ -43,6 +48,7 @@ classes = [
     apiname('SharedSpace', tarbase='pybasics', **_inbasics),
     apiname('ThreeNums', tarbase='pybasics', **_inbasics),
     apiname('*', **_indiscovery),
+    apiname('*', tarbase='cproj_types', **_incprojtypes),
     ]
 
 del os
